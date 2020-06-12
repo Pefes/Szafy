@@ -3,7 +3,8 @@
 #include "communicationThread.h"
 
 
-int I, W, P, state, numberOfRooms, lamport, threadId;
+int I, W, P, state, numberOfRooms, lamport, threadId, lastLamportREQP;
+vector <int> waitingForRoom;
 pthread_t communicationThreadId;
 pthread_mutex_t stateMutex, lamportMutex;
 

@@ -5,3 +5,5 @@ int getRandomNumberOfRooms( int P );
 void incrementLamport( int lamportIn );
 int max( int numberA, int numberB );
 void sendMessageForAll( int messageType );
+void sendMessageForSingleThread( int messageType, int receiverId );
+bool isMyLamportLower( int inputLamport, int inputThreadId );

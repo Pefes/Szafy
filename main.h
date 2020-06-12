@@ -16,6 +16,7 @@
 
 //message type
 #define REQP 0
+#define ACKP 1
 
 using namespace std;
 
@@ -24,6 +25,7 @@ extern int threadId;
 extern int state;
 extern int numberOfRooms;
 extern int lamport;
+extern int lastLamportREQP;
 extern vector <int> waitingForRoom;
 extern vector <int> waitingForLift;
 extern vector <int> agreedForRoom;
