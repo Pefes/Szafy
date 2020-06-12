@@ -4,7 +4,7 @@ HEADERS=$(SOURCES:.c=.h)
 all: main
 
 main: $(SOURCES) $(HEADERS)
-	mpicc $(SOURCES) -o main
+	mpicc $(SOURCES) -pthread -o main
 
 clean:
 	rm main
