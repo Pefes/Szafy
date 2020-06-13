@@ -82,9 +82,23 @@ void sendMessageForAll( int messageType )
 				MPI_Send( message, 2, MPI_INT, receiverId, REQP, MPI_COMM_WORLD );
 			}
 		}
+		
+		printf( "[%d] (%d) My rooms: %d...\n", threadId, lamport, numberOfRooms );
 	}
-	
-	printf( "[%d] (%d) My rooms: %d...\n", threadId, lamport, numberOfRooms );
+	else if ( messageType == REQW )
+	{
+		int message[2] = { lamport, 1 };
+		
+		for ( int receiverId = 0; receiverId < I; receiverId++ )
+		{
+			if ( threadId != receiverId)
+			{
+				MPI_Send( message, 2, MPI_INT, receiverId, REQW, MPI_COMM_WORLD );
+			}
+		}
+		
+		printf( "[%d] (%d) My lift: 1...\n", threadId, lamport );
+	}
 	
 	pthread_mutex_unlock( &lamportMutex );
 }
@@ -98,17 +112,33 @@ void sendMessageForSingleThread( int messageType, int receiverId )
 		int message[2] = { lamport, 0 };
 		MPI_Send( message, 2, MPI_INT, receiverId, ACKP, MPI_COMM_WORLD );
 	}
+	else if ( messageType == ACKW )
+	{
+		int message[2] = { lamport, 0 };
+		MPI_Send( message, 2, MPI_INT, receiverId, ACKW, MPI_COMM_WORLD );
+	}
 	
 	pthread_mutex_unlock( &lamportMutex );
 }
 
-bool isMyLamportLower( int inputLamport, int inputThreadId )
+bool isMyLamportLower( int inputLamport, int inputThreadId, int messageType )
 {
-	if ( lastLamportREQP < inputLamport )
+	int lamportToCheck = 0;
+	
+	if ( messageType == REQP )
+	{
+		lamportToCheck = lastLamportREQP;	
+	}
+	else if ( messageType == REQW )
+	{
+		lamportToCheck = lastLamportREQW;
+	}
+	
+	if ( lamportToCheck < inputLamport )
 	{
 		return true;
 	}
-	else if ( lastLamportREQP > inputLamport )
+	else if ( lamportToCheck > inputLamport )
 	{
 		return false;
 	}
@@ -122,12 +152,21 @@ bool isMyLamportLower( int inputLamport, int inputThreadId )
 	}
 }
 
-void incrementCounterACKP( int messageSender )
+void incrementCounter( int messageSender, int counterType )
 {
-	if ( senderNotInAgreedForRoom( messageSender ))
+	if ( counterType == ACKP )
 	{
-		counterACKP++;
-		printf( "[%d] Current ACKP counter: %d...\n", threadId, counterACKP );
+		if ( senderNotInAgreedForRoom( messageSender ))
+		{
+			counterACKP++;
+		}
+	}
+	else if ( counterType == ACKW )
+	{
+		if ( senderNotInAgreedForLift( messageSender ))
+		{
+			counterACKW++;
+		}
 	}
 }
 
@@ -144,6 +183,23 @@ bool senderNotInAgreedForRoom( int messageSender )
 	}
 	
 	pthread_mutex_unlock( &agreedForRoomMutex);
+	
+	return true;
+}
+
+bool senderNotInAgreedForLift( int messageSender )
+{	
+	pthread_mutex_lock( &agreedForLiftMutex);
+	for ( int i = 0; i < agreedForLift.size(); i++ )
+	{
+		if ( agreedForLift[i] == messageSender )
+		{
+			pthread_mutex_unlock( &agreedForLiftMutex);
+			return false;
+		}
+	}
+	
+	pthread_mutex_unlock( &agreedForLiftMutex);
 	
 	return true;
 }
@@ -192,6 +248,43 @@ bool isEnoughFreeRooms()
 	}
 }
 
+bool gotEnoughACKW()
+{
+	pthread_mutex_lock( &agreedForLiftMutex);
+	int neededAgreements = I - agreedForLift.size() - 1;
+	pthread_mutex_unlock( &agreedForLiftMutex);
+
+	if ( counterACKW >= neededAgreements )
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+bool isEnoughFreeLifts()
+{
+	pthread_mutex_lock( &agreedForLiftMutex);
+	
+	int occupiedLifts = 0;
+	
+	occupiedLifts += agreedForLift.size();
+	occupiedLifts += previousAgreedForLift.size();
+	
+	pthread_mutex_unlock( &agreedForLiftMutex);
+	
+	if ( occupiedLifts < W )
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
 void waitingForRoomPush( int messageSender, int messageValue )
 {
 	pthread_mutex_lock( &waitingForRoomMutex);
@@ -204,4 +297,18 @@ void agreedForRoomPush( int messageSender, int messageValue )
 	pthread_mutex_lock( &agreedForRoomMutex);
 	agreedForRoom.push_back( vector<int>{messageSender, messageValue} );
 	pthread_mutex_unlock( &agreedForRoomMutex);
+}
+
+void waitingForLiftPush( int messageSender )
+{
+	pthread_mutex_lock( &waitingForLiftMutex);
+	waitingForLift.push_back( messageSender );
+	pthread_mutex_unlock( &waitingForLiftMutex);
+}
+
+void agreedForLiftPush( int messageSender )
+{
+	pthread_mutex_lock( &agreedForLiftMutex);
+	agreedForLift.push_back( messageSender );
+	pthread_mutex_unlock( &agreedForLiftMutex);
 }

@@ -28,17 +28,14 @@ void *communicationThread( void *ptr )
 		{
 			if ( state == WAIT_FOR_ACKP )
 			{
-				//printf( "[%d][%d] %d | %d:", threadId, messageSender, lastLamportREQP, messageLamport );
-				if ( isMyLamportLower(messageLamport, messageSender) )
+				if ( isMyLamportLower(messageLamport, messageSender, REQP ) )
 				{
 					waitingForRoomPush( messageSender, messageValue );
-					//printf(" lower...\n");
 				}
 				else 
 				{
 					sendMessageForSingleThread( ACKP, messageSender );
 					agreedForRoomPush( messageSender, messageValue );
-					//printf(" higher...\n");
 				}
 			}
 			else
@@ -49,7 +46,32 @@ void *communicationThread( void *ptr )
 		}
 		else if ( messageTag == ACKP )
 		{
-			incrementCounterACKP( messageSender );
+			incrementCounter( messageSender, ACKP );
+		}
+		else if ( messageTag == REQW )
+		{
+			if ( state == WAIT_FOR_ACKW )
+			{
+				if ( isMyLamportLower(messageLamport, messageSender, REQW) )
+				{
+					waitingForLiftPush( messageSender );
+				}
+				else
+				{
+					sendMessageForSingleThread( ACKW, messageSender );
+					agreedForLiftPush( messageSender );
+				}
+			}
+			else
+			{
+				sendMessageForSingleThread( ACKW, messageSender );
+				agreedForLiftPush( messageSender );
+			}
+		}
+		else if ( messageTag == ACKW )
+		{
+			incrementCounter( messageSender, ACKW );
+			//printf( "[%d] Got ACKW from [%d]...\n", threadId, messageSender );
 		}
 	}
 
