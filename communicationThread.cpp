@@ -35,12 +35,14 @@ void *communicationThread( void *ptr )
 				else 
 				{
 					sendMessageForSingleThread( ACKP, messageSender );
+					//incrementCounter( messageSender, ACKP );
 					agreedForRoomPush( messageSender, messageValue );
 				}
 			}
 			else
 			{
 				sendMessageForSingleThread( ACKP, messageSender );
+				//incrementCounter( messageSender, ACKP );
 				agreedForRoomPush( messageSender, messageValue );
 			}
 		}
@@ -59,22 +61,30 @@ void *communicationThread( void *ptr )
 				else
 				{
 					sendMessageForSingleThread( ACKW, messageSender );
+					incrementCounter( messageSender, ACKW );
 					agreedForLiftPush( messageSender );
 				}
 			}
 			else
 			{
 				sendMessageForSingleThread( ACKW, messageSender );
+				incrementCounter( messageSender, ACKW );
 				agreedForLiftPush( messageSender );
 			}
 		}
 		else if ( messageTag == ACKW )
 		{
 			incrementCounter( messageSender, ACKW );
-			//printf( "[%d] Got ACKW from [%d]...\n", threadId, messageSender );
+		}
+		else if ( messageTag == RELW )
+		{
+			removeFromAgreedOrPreviousAgreedForLift( messageSender );
+		}
+		else if ( messageTag == RELP )
+		{
+			removeFromAgreedOrPreviousAgreedForRoom( messageSender );
 		}
 	}
 
-	
 	pthread_exit( NULL );
 }

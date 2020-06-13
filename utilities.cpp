@@ -83,7 +83,7 @@ void sendMessageForAll( int messageType )
 			}
 		}
 		
-		printf( "[%d] (%d) My rooms: %d...\n", threadId, lamport, numberOfRooms );
+		printf( "[%d] (%d) Rooms request: %d...\n", threadId, lamport, numberOfRooms );
 	}
 	else if ( messageType == REQW )
 	{
@@ -97,9 +97,49 @@ void sendMessageForAll( int messageType )
 			}
 		}
 		
-		printf( "[%d] (%d) My lift: 1...\n", threadId, lamport );
+		printf( "[%d] (%d) Lift request: 1...\n", threadId, lamport );
+	}
+	else if ( messageType == RELW )
+	{
+		int message[2] = { lamport, 0 };
+		
+		for ( int receiverId = 0; receiverId < I; receiverId++ )
+		{
+			if ( threadId != receiverId)
+			{
+				MPI_Send( message, 2, MPI_INT, receiverId, RELW, MPI_COMM_WORLD );
+			}
+		}
+	}
+	else if ( messageType == RELP )
+	{
+		int message[2] = { lamport, 0 };
+		
+		for ( int receiverId = 0; receiverId < I; receiverId++ )
+		{
+			if ( threadId != receiverId)
+			{
+				MPI_Send( message, 2, MPI_INT, receiverId, RELP, MPI_COMM_WORLD );
+			}
+		}
 	}
 	
+	pthread_mutex_unlock( &lamportMutex );
+}
+
+void sendACKPForAllWaitingForRoom()
+{
+	pthread_mutex_lock( &lamportMutex );
+	pthread_mutex_lock( &waitingForRoomMutex );
+	
+	int message[2] = { lamport, 1 };
+	
+	for ( int i = 0; i < waitingForRoom.size(); i++ )
+	{
+		MPI_Send( message, 2, MPI_INT, waitingForRoom[i][0], ACKP, MPI_COMM_WORLD );
+	}
+	
+	pthread_mutex_unlock( &waitingForRoomMutex );
 	pthread_mutex_unlock( &lamportMutex );
 }
 
@@ -156,17 +196,11 @@ void incrementCounter( int messageSender, int counterType )
 {
 	if ( counterType == ACKP )
 	{
-		if ( senderNotInAgreedForRoom( messageSender ))
-		{
-			counterACKP++;
-		}
+		counterACKP++;
 	}
 	else if ( counterType == ACKW )
 	{
-		if ( senderNotInAgreedForLift( messageSender ))
-		{
-			counterACKW++;
-		}
+		counterACKW++;
 	}
 }
 
@@ -207,7 +241,7 @@ bool senderNotInAgreedForLift( int messageSender )
 bool gotEnoughACKP()
 {
 	pthread_mutex_lock( &agreedForRoomMutex);
-	int neededAgreements = I - agreedForRoom.size() - 1;
+	int neededAgreements = I - 1;
 	pthread_mutex_unlock( &agreedForRoomMutex);
 
 	if ( counterACKP >= neededAgreements )
@@ -251,7 +285,7 @@ bool isEnoughFreeRooms()
 bool gotEnoughACKW()
 {
 	pthread_mutex_lock( &agreedForLiftMutex);
-	int neededAgreements = I - agreedForLift.size() - 1;
+	int neededAgreements = I - 1;
 	pthread_mutex_unlock( &agreedForLiftMutex);
 
 	if ( counterACKW >= neededAgreements )
@@ -288,14 +322,14 @@ bool isEnoughFreeLifts()
 void waitingForRoomPush( int messageSender, int messageValue )
 {
 	pthread_mutex_lock( &waitingForRoomMutex);
-	waitingForRoom.push_back( vector<int>{messageSender, messageValue} );
+	waitingForRoom.push_back( vector<int>{ messageSender, messageValue } );
 	pthread_mutex_unlock( &waitingForRoomMutex);
 }
 
 void agreedForRoomPush( int messageSender, int messageValue )
 {
 	pthread_mutex_lock( &agreedForRoomMutex);
-	agreedForRoom.push_back( vector<int>{messageSender, messageValue} );
+	agreedForRoom.push_back( vector<int>{ messageSender, messageValue } );
 	pthread_mutex_unlock( &agreedForRoomMutex);
 }
 
@@ -311,4 +345,124 @@ void agreedForLiftPush( int messageSender )
 	pthread_mutex_lock( &agreedForLiftMutex);
 	agreedForLift.push_back( messageSender );
 	pthread_mutex_unlock( &agreedForLiftMutex);
+}
+
+void useLift()
+{
+	printf( "[%d] Using lift...\n", threadId );
+	sleep( getRandomTime() );
+}
+
+int getRandomTime()
+{
+	return MIN_SLEEP + rand() % (( MAX_SLEEP + 1) - MIN_SLEEP);
+}
+
+void moveWaitingForRoomToAgreedForRoom()
+{
+	pthread_mutex_lock( &waitingForRoomMutex );
+	pthread_mutex_lock( &agreedForRoomMutex );
+	
+	for ( int i = 0; i < waitingForRoom.size(); i++ )
+	{
+		agreedForRoom.push_back( vector<int>{ waitingForRoom[i][0], waitingForRoom[i][1] });
+	}
+	
+	waitingForRoom.clear();
+	
+	pthread_mutex_unlock( &agreedForRoomMutex );
+	pthread_mutex_unlock( &waitingForRoomMutex );
+}
+
+void moveWaitingForLiftToAgreedForLift()
+{
+	pthread_mutex_lock( &waitingForLiftMutex );
+	pthread_mutex_lock( &agreedForLiftMutex );
+	
+	for ( int i = 0; i < waitingForLift.size(); i++ )
+	{
+		agreedForLift.push_back( waitingForLift[i] );
+	}
+	
+	waitingForLift.clear();
+	
+	pthread_mutex_unlock( &agreedForLiftMutex );
+	pthread_mutex_unlock( &waitingForLiftMutex );
+}
+
+void moveAgreedForLiftToPreviousAgreedForLift()
+{
+	pthread_mutex_lock( &agreedForLiftMutex );
+	pthread_mutex_lock( &previousAgreedForLiftMutex );
+	
+	for ( int i = 0; i < agreedForLift.size(); i++ )
+	{
+		previousAgreedForLift.push_back( agreedForLift[i] );
+	}
+	
+	agreedForLift.clear();
+	
+	pthread_mutex_unlock( &previousAgreedForLiftMutex );
+	pthread_mutex_unlock( &agreedForLiftMutex );
+}
+
+void moveAgreedForRoomToPreviousAgreedForRoom()
+{
+	pthread_mutex_lock( &agreedForRoomMutex );
+	pthread_mutex_lock( &previousAgreedForRoomMutex );
+	
+	for ( int i = 0; i < agreedForRoom.size(); i++ )
+	{
+		previousAgreedForRoom.push_back( vector<int>{ agreedForRoom[i][0], agreedForRoom[i][1] } );
+	}
+	
+	agreedForRoom.clear();
+	
+	pthread_mutex_unlock( &previousAgreedForRoomMutex );
+	pthread_mutex_unlock( &agreedForRoomMutex );
+}
+
+void removeFromAgreedOrPreviousAgreedForLift( int messageSender )
+{	
+	pthread_mutex_lock( &agreedForLiftMutex );
+	pthread_mutex_lock( &previousAgreedForLiftMutex );
+	
+	agreedForLift.erase( remove(agreedForLift.begin(), agreedForLift.end(), messageSender), agreedForLift.end() );
+	previousAgreedForLift.erase( remove(previousAgreedForLift.begin(), previousAgreedForLift.end(), messageSender), previousAgreedForLift.end() );
+	
+	pthread_mutex_unlock( &previousAgreedForLiftMutex );
+	pthread_mutex_unlock( &agreedForLiftMutex );
+}
+
+void removeFromAgreedOrPreviousAgreedForRoom( int messageSender )
+{
+	pthread_mutex_lock( &agreedForRoomMutex );
+	pthread_mutex_lock( &previousAgreedForRoomMutex );
+	
+	for ( int i = 0; i < agreedForRoom.size(); i++ )
+	{
+		if ( agreedForRoom[i][0] == messageSender )
+		{
+			agreedForRoom.erase( agreedForRoom.begin() + i );
+			break;
+		}
+	}
+	
+	for ( int i = 0; i < previousAgreedForRoom.size(); i++ )
+	{
+		if ( previousAgreedForRoom[i][0] == messageSender )
+		{
+			previousAgreedForRoom.erase( previousAgreedForRoom.begin() + i );
+			break;
+		}
+	}
+	
+	pthread_mutex_unlock( &previousAgreedForRoomMutex );
+	pthread_mutex_unlock( &agreedForRoomMutex );
+}
+
+void useRooms()
+{
+	printf( "[%d] Using rooms...\n", threadId );
+	sleep( getRandomTime() );
 }

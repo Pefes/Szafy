@@ -9,6 +9,8 @@
 
 #define ROOT 0
 #define MSG_TAG 100
+#define MAX_SLEEP 5
+#define MIN_SLEEP 0
 
 //process state
 #define FINISH -1
@@ -18,12 +20,18 @@
 #define SENDING_REQW 3
 #define WAIT_FOR_ACKW 4
 #define USE_LIFT 5
+#define USE_ROOMS 6
+#define SENDING_REQW_BACKWARDS 7
+#define WAIT_FOR_ACKW_BACKWARDS 8
+#define USE_LIFT_BACKWARDS 9
 
 //message type
 #define REQP 0
 #define ACKP 1
 #define REQW 2
 #define ACKW 3
+#define RELW 4
+#define RELP 5
 
 using namespace std;
 
