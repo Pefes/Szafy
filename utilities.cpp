@@ -80,10 +80,11 @@ void sendMessageForAll( int messageType )
 			if ( threadId != receiverId)
 			{
 				MPI_Send( message, 2, MPI_INT, receiverId, REQP, MPI_COMM_WORLD );
-				printf( "[%d] Message sent to [%d]...\n", threadId, receiverId );
 			}
 		}
 	}
+	
+	printf( "[%d] (%d) My rooms: %d...\n", threadId, lamport, numberOfRooms );
 	
 	pthread_mutex_unlock( &lamportMutex );
 }
@@ -94,7 +95,7 @@ void sendMessageForSingleThread( int messageType, int receiverId )
 	
 	if ( messageType == ACKP )
 	{
-		int message[2] = { lamport, NULL };
+		int message[2] = { lamport, 0 };
 		MPI_Send( message, 2, MPI_INT, receiverId, ACKP, MPI_COMM_WORLD );
 	}
 	
@@ -119,4 +120,88 @@ bool isMyLamportLower( int inputLamport, int inputThreadId )
 	{
 		return false;
 	}
+}
+
+void incrementCounterACKP( int messageSender )
+{
+	if ( senderNotInAgreedForRoom( messageSender ))
+	{
+		counterACKP++;
+		printf( "[%d] Current ACKP counter: %d...\n", threadId, counterACKP );
+	}
+}
+
+bool senderNotInAgreedForRoom( int messageSender )
+{	
+	pthread_mutex_lock( &agreedForRoomMutex);
+	for ( int i = 0; i < agreedForRoom.size(); i++ )
+	{
+		if ( agreedForRoom[i][0] == messageSender )
+		{
+			pthread_mutex_unlock( &agreedForRoomMutex);
+			return false;
+		}
+	}
+	
+	pthread_mutex_unlock( &agreedForRoomMutex);
+	
+	return true;
+}
+
+bool gotEnoughACKP()
+{
+	pthread_mutex_lock( &agreedForRoomMutex);
+	int neededAgreements = I - agreedForRoom.size() - 1;
+	pthread_mutex_unlock( &agreedForRoomMutex);
+
+	if ( counterACKP >= neededAgreements )
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+bool isEnoughFreeRooms()
+{
+	pthread_mutex_lock( &agreedForRoomMutex);
+	
+	int occupiedRooms = 0;
+	
+	for ( int i = 0; i < agreedForRoom.size(); i++ )
+	{
+		occupiedRooms += agreedForRoom[i][1];
+	}
+	
+	for ( int i = 0; i < previousAgreedForRoom.size(); i++ )
+	{
+		occupiedRooms += previousAgreedForRoom[i][1];
+	}
+	
+	pthread_mutex_unlock( &agreedForRoomMutex);
+	
+	if ( P - occupiedRooms >= numberOfRooms )
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+void waitingForRoomPush( int messageSender, int messageValue )
+{
+	pthread_mutex_lock( &waitingForRoomMutex);
+	waitingForRoom.push_back( vector<int>{messageSender, messageValue} );
+	pthread_mutex_unlock( &waitingForRoomMutex);
+}
+
+void agreedForRoomPush( int messageSender, int messageValue )
+{
+	pthread_mutex_lock( &agreedForRoomMutex);
+	agreedForRoom.push_back( vector<int>{messageSender, messageValue} );
+	pthread_mutex_unlock( &agreedForRoomMutex);
 }

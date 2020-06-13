@@ -11,7 +11,7 @@ void *communicationThread( void *ptr )
 	int message[2];
 	int messageTag, messageSender, messageLamport, messageValue;
 	
-	while ( 1 )
+	while ( state != FINISH )
 	{
 		//get the message
 		MPI_Recv( message, 2, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status );
@@ -22,27 +22,34 @@ void *communicationThread( void *ptr )
 		messageLamport = message[0];
 		messageValue = message[1];
 		
-		printf( "[%d] Received message from %d with lamport %d and value %d...\n", threadId, messageSender, messageLamport, messageValue );
-		
 		incrementLamport( messageLamport );
 		
 		if ( messageTag == REQP )
 		{
 			if ( state == WAIT_FOR_ACKP )
 			{
+				//printf( "[%d][%d] %d | %d:", threadId, messageSender, lastLamportREQP, messageLamport );
 				if ( isMyLamportLower(messageLamport, messageSender) )
 				{
-					waitingForRoom.push_back( messageSender );
+					waitingForRoomPush( messageSender, messageValue );
+					//printf(" lower...\n");
 				}
 				else 
 				{
 					sendMessageForSingleThread( ACKP, messageSender );
+					agreedForRoomPush( messageSender, messageValue );
+					//printf(" higher...\n");
 				}
 			}
 			else
 			{
-				
+				sendMessageForSingleThread( ACKP, messageSender );
+				agreedForRoomPush( messageSender, messageValue );
 			}
+		}
+		else if ( messageTag == ACKP )
+		{
+			incrementCounterACKP( messageSender );
 		}
 	}
 

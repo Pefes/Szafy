@@ -4,9 +4,11 @@
 
 
 int I, W, P, state, numberOfRooms, lamport, threadId, lastLamportREQP;
-vector <int> waitingForRoom;
+int counterACKP, counterACKW;
+vector < vector<int> > waitingForRoom, waitingForLift, agreedForRoom, agreedForLift, previousAgreedForRoom, previousAgreedForLift;
 pthread_t communicationThreadId;
 pthread_mutex_t stateMutex, lamportMutex;
+pthread_mutex_t waitingForRoomMutex, waitingForLiftMutex, agreedForRoomMutex, agreedForLiftMutex, previousAgreedForRoomMutex, previousAgreedForLiftMutex;
 
 
 int main( int argc, char **argv )
@@ -14,7 +16,7 @@ int main( int argc, char **argv )
 	initialize( &argc, &argv );
 	
 	//main loop
-	while ( 1 )
+	while ( state != FINISH )
 	{
 		if ( state == START )
 		{
@@ -28,7 +30,20 @@ int main( int argc, char **argv )
 		}
 		if ( state == WAIT_FOR_ACKP )
 		{
-			break;
+			while ( 1 )
+			{
+				if ( gotEnoughACKP() && isEnoughFreeRooms() )
+				{
+					printf( "[%d] Got acces to rooms...\n", threadId );
+					setState( WAITING_FOR_FREE_ROOMS );
+					break;
+				}
+			}
+		}
+		if ( state == WAITING_FOR_FREE_ROOMS )
+		{
+			//printf( "[%d] Waiting for free rooms...\n", threadId );
+			//setState( FINISH );
 		}
 	}
 	
