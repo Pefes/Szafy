@@ -10,4 +10,4 @@ clean:
 	rm main
 
 run: main
-	mpirun -np 3 ./main 2 10
+	mpirun -np 3 ./main 1 10

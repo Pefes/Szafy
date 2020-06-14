@@ -6,6 +6,7 @@ void incrementLamport( int lamportIn );
 int max( int numberA, int numberB );
 void sendMessageForAll( int messageType );
 void sendACKPForAllWaitingForRoom();
+void sendACKWForAllWaitingForLift();
 void sendMessageForSingleThread( int messageType, int receiverId );
 bool isMyLamportLower( int inputLamport, int inputThreadId, int messageType );
 void incrementCounter( int messageSender, int counterType );

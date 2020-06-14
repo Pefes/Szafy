@@ -55,6 +55,7 @@ int main( int argc, char **argv )
 				if ( gotEnoughACKW() && isEnoughFreeLifts() )
 				{
 					//printf( "[%d] Got access to lift...\n", threadId );
+					sendACKWForAllWaitingForLift();
 					moveWaitingForLiftToAgreedForLift();
 					setState( USE_LIFT );
 					break;
@@ -66,6 +67,7 @@ int main( int argc, char **argv )
 			useLift();
 			sendMessageForAll( RELW );
 			moveAgreedForLiftToPreviousAgreedForLift();
+			counterACKW = 0;
 			setState( USE_ROOMS );
 		}
 		if ( state == USE_ROOMS )
@@ -85,6 +87,7 @@ int main( int argc, char **argv )
 				if ( gotEnoughACKW() && isEnoughFreeLifts() )
 				{
 					//printf( "[%d] Got access to lift backwards...\n", threadId );
+					sendACKWForAllWaitingForLift();
 					moveWaitingForLiftToAgreedForLift();
 					setState( USE_LIFT_BACKWARDS );
 					break;

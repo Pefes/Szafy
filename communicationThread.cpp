@@ -52,7 +52,7 @@ void *communicationThread( void *ptr )
 		}
 		else if ( messageTag == REQW )
 		{
-			if ( state == WAIT_FOR_ACKW )
+			if ( state == WAIT_FOR_ACKW || state == WAIT_FOR_ACKW_BACKWARDS )
 			{
 				if ( isMyLamportLower(messageLamport, messageSender, REQW) )
 				{
@@ -61,14 +61,14 @@ void *communicationThread( void *ptr )
 				else
 				{
 					sendMessageForSingleThread( ACKW, messageSender );
-					incrementCounter( messageSender, ACKW );
+					//incrementCounter( messageSender, ACKW );
 					agreedForLiftPush( messageSender );
 				}
 			}
 			else
 			{
 				sendMessageForSingleThread( ACKW, messageSender );
-				incrementCounter( messageSender, ACKW );
+				//incrementCounter( messageSender, ACKW );
 				agreedForLiftPush( messageSender );
 			}
 		}

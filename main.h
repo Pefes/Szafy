@@ -9,8 +9,8 @@
 
 #define ROOT 0
 #define MSG_TAG 100
-#define MAX_SLEEP 5
-#define MIN_SLEEP 0
+#define MAX_SLEEP 6
+#define MIN_SLEEP 4
 
 //process state
 #define FINISH -1

@@ -27,6 +27,12 @@ void initialize( int *argc, char ***argv )
 	//mutex init
 	stateMutex = (pthread_mutex_t) PTHREAD_MUTEX_INITIALIZER;
 	lamportMutex = (pthread_mutex_t) PTHREAD_MUTEX_INITIALIZER;
+	waitingForRoomMutex = (pthread_mutex_t) PTHREAD_MUTEX_INITIALIZER;
+	waitingForLiftMutex = (pthread_mutex_t) PTHREAD_MUTEX_INITIALIZER;
+	agreedForRoomMutex = (pthread_mutex_t) PTHREAD_MUTEX_INITIALIZER;
+	agreedForLiftMutex = (pthread_mutex_t) PTHREAD_MUTEX_INITIALIZER;
+	previousAgreedForRoomMutex = (pthread_mutex_t) PTHREAD_MUTEX_INITIALIZER;
+	previousAgreedForLiftMutex = (pthread_mutex_t) PTHREAD_MUTEX_INITIALIZER;
 }
 
 void finalize()
@@ -67,12 +73,11 @@ int max( int numberA, int numberB )
 
 void sendMessageForAll( int messageType )
 {
-	pthread_mutex_lock( &lamportMutex );
-	
-	lastLamportREQP = lamport;
-	
+	pthread_mutex_lock( &lamportMutex );	
+		
 	if ( messageType == REQP )
 	{
+		lastLamportREQP = lamport;
 		int message[2] = { lamport, numberOfRooms };
 		
 		for ( int receiverId = 0; receiverId < I; receiverId++ )
@@ -87,6 +92,7 @@ void sendMessageForAll( int messageType )
 	}
 	else if ( messageType == REQW )
 	{
+		lastLamportREQW = lamport;
 		int message[2] = { lamport, 1 };
 		
 		for ( int receiverId = 0; receiverId < I; receiverId++ )
@@ -140,6 +146,22 @@ void sendACKPForAllWaitingForRoom()
 	}
 	
 	pthread_mutex_unlock( &waitingForRoomMutex );
+	pthread_mutex_unlock( &lamportMutex );
+}
+
+void sendACKWForAllWaitingForLift()
+{
+	pthread_mutex_lock( &lamportMutex );
+	pthread_mutex_lock( &waitingForLiftMutex );
+	
+	int message[2] = { lamport, 1 };
+	
+	for ( int i = 0; i < waitingForLift.size(); i++ )
+	{
+		MPI_Send( message, 2, MPI_INT, waitingForLift[i], ACKW, MPI_COMM_WORLD );
+	}
+	
+	pthread_mutex_unlock( &waitingForLiftMutex );
 	pthread_mutex_unlock( &lamportMutex );
 }
 
