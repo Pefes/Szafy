@@ -7,10 +7,8 @@
 #include <vector>
 #include <algorithm>
 
-#define ROOT 0
-#define MSG_TAG 100
-#define MAX_SLEEP 6
-#define MIN_SLEEP 4
+#define MAX_SLEEP 7
+#define MIN_SLEEP 5
 
 //process state
 #define FINISH -1
