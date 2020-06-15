@@ -371,7 +371,7 @@ void agreedForLiftPush( int messageSender )
 
 void useLift()
 {
-	printf( "[%d] Using lift...\n", threadId );
+	printf( "[%d] (%d) Using lift...\n", threadId, lamport );
 	sleep( getRandomTime() );
 }
 
@@ -485,6 +485,6 @@ void removeFromAgreedOrPreviousAgreedForRoom( int messageSender )
 
 void useRooms()
 {
-	printf( "[%d] Using rooms...\n", threadId );
+	printf( "[%d] (%d) Using rooms...\n", threadId, lamport );
 	sleep( getRandomTime() );
 }

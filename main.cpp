@@ -35,7 +35,7 @@ int main( int argc, char **argv )
 			{
 				if ( gotEnoughACKP() && isEnoughFreeRooms() )
 				{
-					//printf( "[%d] Got access to rooms...\n", threadId );
+					printf( "[%d] (%d) Got access to rooms...\n", threadId, lamport );
 					sendACKPForAllWaitingForRoom();
 					moveWaitingForRoomToAgreedForRoom();
 					setState( SENDING_REQW );
@@ -54,7 +54,7 @@ int main( int argc, char **argv )
 			{
 				if ( gotEnoughACKW() && isEnoughFreeLifts() )
 				{
-					//printf( "[%d] Got access to lift...\n", threadId );
+					printf( "[%d] (%d) Got access to lift...\n", threadId, lamport );
 					sendACKWForAllWaitingForLift();
 					moveWaitingForLiftToAgreedForLift();
 					setState( USE_LIFT );
@@ -86,7 +86,7 @@ int main( int argc, char **argv )
 			{
 				if ( gotEnoughACKW() && isEnoughFreeLifts() )
 				{
-					//printf( "[%d] Got access to lift backwards...\n", threadId );
+					printf( "[%d] (%d) Got access to lift backwards...\n", threadId, lamport );
 					sendACKWForAllWaitingForLift();
 					moveWaitingForLiftToAgreedForLift();
 					setState( USE_LIFT_BACKWARDS );
@@ -101,10 +101,10 @@ int main( int argc, char **argv )
 			moveAgreedForLiftToPreviousAgreedForLift();
 			sendMessageForAll( RELP );
 			moveAgreedForRoomToPreviousAgreedForRoom();
-			printf( "[%d] I'm out!\n", threadId );
 			counterACKP = 0;
 			counterACKW = 0;
 			setState( START );
+			printf( "[%d] (%d) I'm out!\n", threadId, lamport );
 		}
 	}
 	
