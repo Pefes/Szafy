@@ -377,6 +377,7 @@ void useLift()
 
 int getRandomTime()
 {
+	return 0;
 	return MIN_SLEEP + rand() % (( MAX_SLEEP + 1) - MIN_SLEEP);
 }
 
