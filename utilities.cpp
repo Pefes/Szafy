@@ -31,8 +31,6 @@ void initialize( int *argc, char ***argv )
 	waitingForLiftMutex = (pthread_mutex_t) PTHREAD_MUTEX_INITIALIZER;
 	agreedForRoomMutex = (pthread_mutex_t) PTHREAD_MUTEX_INITIALIZER;
 	agreedForLiftMutex = (pthread_mutex_t) PTHREAD_MUTEX_INITIALIZER;
-	previousAgreedForRoomMutex = (pthread_mutex_t) PTHREAD_MUTEX_INITIALIZER;
-	previousAgreedForLiftMutex = (pthread_mutex_t) PTHREAD_MUTEX_INITIALIZER;
 }
 
 void finalize()
@@ -226,45 +224,9 @@ void incrementCounter( int messageSender, int counterType )
 	}
 }
 
-bool senderNotInAgreedForRoom( int messageSender )
-{	
-	pthread_mutex_lock( &agreedForRoomMutex);
-	for ( int i = 0; i < agreedForRoom.size(); i++ )
-	{
-		if ( agreedForRoom[i][0] == messageSender )
-		{
-			pthread_mutex_unlock( &agreedForRoomMutex);
-			return false;
-		}
-	}
-	
-	pthread_mutex_unlock( &agreedForRoomMutex);
-	
-	return true;
-}
-
-bool senderNotInAgreedForLift( int messageSender )
-{	
-	pthread_mutex_lock( &agreedForLiftMutex);
-	for ( int i = 0; i < agreedForLift.size(); i++ )
-	{
-		if ( agreedForLift[i] == messageSender )
-		{
-			pthread_mutex_unlock( &agreedForLiftMutex);
-			return false;
-		}
-	}
-	
-	pthread_mutex_unlock( &agreedForLiftMutex);
-	
-	return true;
-}
-
 bool gotEnoughACKP()
 {
-	pthread_mutex_lock( &agreedForRoomMutex);
 	int neededAgreements = I - 1;
-	pthread_mutex_unlock( &agreedForRoomMutex);
 
 	if ( counterACKP >= neededAgreements )
 	{
@@ -287,11 +249,6 @@ bool isEnoughFreeRooms()
 		occupiedRooms += agreedForRoom[i][1];
 	}
 	
-	for ( int i = 0; i < previousAgreedForRoom.size(); i++ )
-	{
-		occupiedRooms += previousAgreedForRoom[i][1];
-	}
-	
 	pthread_mutex_unlock( &agreedForRoomMutex);
 	
 	if ( P - occupiedRooms >= numberOfRooms )
@@ -306,9 +263,7 @@ bool isEnoughFreeRooms()
 
 bool gotEnoughACKW()
 {
-	pthread_mutex_lock( &agreedForLiftMutex);
 	int neededAgreements = I - 1;
-	pthread_mutex_unlock( &agreedForLiftMutex);
 
 	if ( counterACKW >= neededAgreements )
 	{
@@ -327,7 +282,6 @@ bool isEnoughFreeLifts()
 	int occupiedLifts = 0;
 	
 	occupiedLifts += agreedForLift.size();
-	occupiedLifts += previousAgreedForLift.size();
 	
 	pthread_mutex_unlock( &agreedForLiftMutex);
 	
@@ -377,7 +331,6 @@ void useLift()
 
 int getRandomTime()
 {
-	return 0;
 	return MIN_SLEEP + rand() % (( MAX_SLEEP + 1) - MIN_SLEEP);
 }
 
@@ -413,54 +366,18 @@ void moveWaitingForLiftToAgreedForLift()
 	pthread_mutex_unlock( &waitingForLiftMutex );
 }
 
-void moveAgreedForLiftToPreviousAgreedForLift()
-{
-	pthread_mutex_lock( &agreedForLiftMutex );
-	pthread_mutex_lock( &previousAgreedForLiftMutex );
-	
-	for ( int i = 0; i < agreedForLift.size(); i++ )
-	{
-		previousAgreedForLift.push_back( agreedForLift[i] );
-	}
-	
-	agreedForLift.clear();
-	
-	pthread_mutex_unlock( &previousAgreedForLiftMutex );
-	pthread_mutex_unlock( &agreedForLiftMutex );
-}
-
-void moveAgreedForRoomToPreviousAgreedForRoom()
-{
-	pthread_mutex_lock( &agreedForRoomMutex );
-	pthread_mutex_lock( &previousAgreedForRoomMutex );
-	
-	for ( int i = 0; i < agreedForRoom.size(); i++ )
-	{
-		previousAgreedForRoom.push_back( vector<int>{ agreedForRoom[i][0], agreedForRoom[i][1] } );
-	}
-	
-	agreedForRoom.clear();
-	
-	pthread_mutex_unlock( &previousAgreedForRoomMutex );
-	pthread_mutex_unlock( &agreedForRoomMutex );
-}
-
-void removeFromAgreedOrPreviousAgreedForLift( int messageSender )
+void removeFromAgreedForLift( int messageSender )
 {	
 	pthread_mutex_lock( &agreedForLiftMutex );
-	pthread_mutex_lock( &previousAgreedForLiftMutex );
 	
 	agreedForLift.erase( remove(agreedForLift.begin(), agreedForLift.end(), messageSender), agreedForLift.end() );
-	previousAgreedForLift.erase( remove(previousAgreedForLift.begin(), previousAgreedForLift.end(), messageSender), previousAgreedForLift.end() );
 	
-	pthread_mutex_unlock( &previousAgreedForLiftMutex );
 	pthread_mutex_unlock( &agreedForLiftMutex );
 }
 
-void removeFromAgreedOrPreviousAgreedForRoom( int messageSender )
+void removeFromAgreedForRoom( int messageSender )
 {
 	pthread_mutex_lock( &agreedForRoomMutex );
-	pthread_mutex_lock( &previousAgreedForRoomMutex );
 	
 	for ( int i = 0; i < agreedForRoom.size(); i++ )
 	{
@@ -471,16 +388,6 @@ void removeFromAgreedOrPreviousAgreedForRoom( int messageSender )
 		}
 	}
 	
-	for ( int i = 0; i < previousAgreedForRoom.size(); i++ )
-	{
-		if ( previousAgreedForRoom[i][0] == messageSender )
-		{
-			previousAgreedForRoom.erase( previousAgreedForRoom.begin() + i );
-			break;
-		}
-	}
-	
-	pthread_mutex_unlock( &previousAgreedForRoomMutex );
 	pthread_mutex_unlock( &agreedForRoomMutex );
 }
 

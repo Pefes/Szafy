@@ -5,11 +5,11 @@
 
 int I, W, P, state, numberOfRooms, lamport, threadId, lastLamportREQP, lastLamportREQW;
 int counterACKP, counterACKW;
-vector < vector<int> > waitingForRoom, agreedForRoom, previousAgreedForRoom;
-vector <int> waitingForLift, agreedForLift, previousAgreedForLift;
+vector < vector<int> > waitingForRoom, agreedForRoom;
+vector <int> waitingForLift, agreedForLift;
 pthread_t communicationThreadId;
 pthread_mutex_t stateMutex, lamportMutex;
-pthread_mutex_t waitingForRoomMutex, waitingForLiftMutex, agreedForRoomMutex, agreedForLiftMutex, previousAgreedForRoomMutex, previousAgreedForLiftMutex;
+pthread_mutex_t waitingForRoomMutex, waitingForLiftMutex, agreedForRoomMutex, agreedForLiftMutex;
 
 
 int main( int argc, char **argv )
@@ -66,7 +66,7 @@ int main( int argc, char **argv )
 		{
 			useLift();
 			sendMessageForAll( RELW );
-			moveAgreedForLiftToPreviousAgreedForLift();
+			//moveAgreedForLiftToPreviousAgreedForLift();
 			counterACKW = 0;
 			setState( USE_ROOMS );
 		}
@@ -98,9 +98,9 @@ int main( int argc, char **argv )
 		{
 			useLift();
 			sendMessageForAll( RELW );
-			moveAgreedForLiftToPreviousAgreedForLift();
+			//moveAgreedForLiftToPreviousAgreedForLift();
 			sendMessageForAll( RELP );
-			moveAgreedForRoomToPreviousAgreedForRoom();
+			//moveAgreedForRoomToPreviousAgreedForRoom();
 			counterACKP = 0;
 			counterACKW = 0;
 			setState( START );

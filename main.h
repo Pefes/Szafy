@@ -42,14 +42,12 @@ extern int lastLamportREQP, lastLamportREQW;
 extern int counterACKP, counterACKW;
 extern vector < vector<int> > waitingForRoom;
 extern vector < vector<int> > agreedForRoom;
-extern vector < vector<int> > previousAgreedForRoom;
 extern vector <int> waitingForLift;
 extern vector <int> agreedForLift;
-extern vector <int> previousAgreedForLift;
 
 extern pthread_t communicationThreadId;
 extern pthread_mutex_t stateMutex;
 extern pthread_mutex_t lamportMutex;
-extern pthread_mutex_t waitingForRoomMutex, waitingForLiftMutex, agreedForRoomMutex, agreedForLiftMutex, previousAgreedForRoomMutex, previousAgreedForLiftMutex;
+extern pthread_mutex_t waitingForRoomMutex, waitingForLiftMutex, agreedForRoomMutex, agreedForLiftMutex;
 
 int main(int argc, char **argv);

@@ -26,6 +26,6 @@ void moveWaitingForRoomToAgreedForRoom();
 void moveWaitingForLiftToAgreedForLift();
 void moveAgreedForLiftToPreviousAgreedForLift();
 void moveAgreedForRoomToPreviousAgreedForRoom();
-void removeFromAgreedOrPreviousAgreedForLift( int messageSender );
-void removeFromAgreedOrPreviousAgreedForRoom( int messageSender );
+void removeFromAgreedForLift( int messageSender );
+void removeFromAgreedForRoom( int messageSender );
 void useRooms();

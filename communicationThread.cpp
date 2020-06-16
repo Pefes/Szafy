@@ -35,14 +35,12 @@ void *communicationThread( void *ptr )
 				else 
 				{
 					sendMessageForSingleThread( ACKP, messageSender );
-					//incrementCounter( messageSender, ACKP );
 					agreedForRoomPush( messageSender, messageValue );
 				}
 			}
 			else
 			{
 				sendMessageForSingleThread( ACKP, messageSender );
-				//incrementCounter( messageSender, ACKP );
 				agreedForRoomPush( messageSender, messageValue );
 			}
 		}
@@ -61,7 +59,6 @@ void *communicationThread( void *ptr )
 				else
 				{
 					sendMessageForSingleThread( ACKW, messageSender );
-					//incrementCounter( messageSender, ACKW );
 					agreedForLiftPush( messageSender );
 				}
 			}
@@ -78,11 +75,11 @@ void *communicationThread( void *ptr )
 		}
 		else if ( messageTag == RELW )
 		{
-			removeFromAgreedOrPreviousAgreedForLift( messageSender );
+			removeFromAgreedForLift( messageSender );
 		}
 		else if ( messageTag == RELP )
 		{
-			removeFromAgreedOrPreviousAgreedForRoom( messageSender );
+			removeFromAgreedForRoom( messageSender );
 		}
 	}
 
